@@ -13,8 +13,15 @@ on:
 metadata:
   stages/v1alpha1:
     - name: Development
+      jobs:
+        - Development
     - name: Staging
+      jobs:
+        - Approve-Staging
+        - Staging
     - name: Production
+      jobs:
+        - Production
 
 jobs:
   Development:
@@ -25,9 +32,10 @@ jobs:
 
   Approve-Staging:
     needs: [Development]
-    type: custom
-    delegates:
-      - ravelo-manual-approval:
+    steps:
+      - name: Manual approval for Staging
+        uses: cloudbees-io/gate@v1
+        with:
           description: Approve deployment to Staging
 
   Staging:
