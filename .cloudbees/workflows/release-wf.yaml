@@ -1,0 +1,45 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Release WF
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        type: string
+        required: true
+        description: System-generated manifest for releases
+
+metadata:
+  stages/v1alpha1:
+    - name: Development
+    - name: Staging
+    - name: Production
+
+jobs:
+  Development:
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      environment: Development
+      manifest: ${{ inputs.manifest }}
+
+  Approve-Staging:
+    needs: [Development]
+    type: custom
+    delegates:
+      - ravelo-manual-approval:
+          description: Approve deployment to Staging
+
+  Staging:
+    needs: [Approve-Staging]
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      environment: Staging
+      manifest: ${{ inputs.manifest }}
+
+  Production:
+    needs: [Staging]
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      environment: Production
+      manifest: ${{ inputs.manifest }}
